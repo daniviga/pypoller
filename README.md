@@ -21,5 +21,5 @@ $ pip install -U pip -r requirements.txt -r requirements-dev.txt
 
 ## Usage
 ```bash
-$ ./pypoller.py 192.168.0.120 demo/registers.csv --port 502 --loop --delay 0.01
+$ ./pypoller.py 192.168.0.120 demo/registers.csv --port 502 --slave 1 --loop --delay 0.01
 ```
