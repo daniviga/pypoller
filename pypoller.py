@@ -6,7 +6,6 @@ import argparse
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.constants import Endian
-from pymodbus.compat import iteritems
 
 
 def main(args):
