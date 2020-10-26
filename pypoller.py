@@ -9,28 +9,53 @@ from pymodbus.constants import Endian
 from pymodbus.compat import iteritems
 
 
-def main(ip, csv_name, loop, delay):
-    client = ModbusClient(ip, port=502)
+def main(args):
+    client = ModbusClient(args.ip, args.port)
     client.connect()
     while True:
-        with open(csv_name) as csv_file:
+        with open(args.csv_file) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=",")
             for row in csv_reader:
+                if row[0].startswith('#'):
+                    continue
+
+                register = int(row[0])
+                register_length = int(row[1])
+                try:
+                    multiplier = float(row[2])
+                except ValueError:
+                    multiplier = 1
+                encoding = row[3]
                 result = client.read_input_registers(
-                        int(row[0]), int(row[1]), unit=1
+                        register, register_length, unit=1
                 )
                 decoder = BinaryPayloadDecoder.fromRegisters(
                     result.registers,
                     byteorder=Endian.Big,
                     wordorder=Endian.Big
                 )
-                decoded = {
-                    "string": decoder.decode_string(16),
-                }
-                for _, value in iteritems(decoded):
-                    print("%s:\t" % row[0], value)
-                time.sleep(delay)
-        if not loop:
+                if encoding.upper() == 'CHAR':
+                    decoded = decoder.decode_string(
+                        register_length*2).decode()
+                elif encoding.upper() == 'U8':
+                    decoded = decoder.decode_8bit_uint() * multiplier
+                elif encoding.upper() == 'U16':
+                    decoded = decoder.decode_16bit_uint() * multiplier
+                elif encoding.upper() == 'U32':
+                    decoded = decoder.decode_32bit_uint() * multiplier
+                elif encoding.upper() == 'S8':
+                    decoded = decoder.decode_8bit_int() * multiplier
+                elif encoding.upper() == 'S16':
+                    decoded = decoder.decode_16bit_int() * multiplier
+                elif encoding.upper() == 'S32':
+                    decoded = decoder.decode_32bit_int() * multiplier
+                else:
+                    decoded = "FORMAT UNSUPPORTED"
+
+                print("%s:\t" % register, decoded)
+                time.sleep(args.delay)
+
+        if not args.loop:
             break
 
     client.close()
@@ -39,8 +64,9 @@ def main(ip, csv_name, loop, delay):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("ip", help="target IP address")
-    parser.add_argument("csv", help="csv file to be parsed")
-    parser.add_argument("--delay", type=float, default=1, help="delay")
-    parser.add_argument("--loop", action="store_true", help="loop")
+    parser.add_argument("csv_file", help="csv file to be parsed")
+    parser.add_argument("--port", "-p", type=int, default=502, help="port")
+    parser.add_argument("--delay", "-d", type=float, default=1, help="delay")
+    parser.add_argument("--loop", "-l", action="store_true", help="loop")
     args = parser.parse_args()
-    main(args.ip, args.csv, args.loop, args.delay)
+    main(args)
