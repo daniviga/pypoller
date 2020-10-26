@@ -9,6 +9,7 @@ from pymodbus.constants import Endian
 
 
 def main(args):
+    print("# connecting to %s:%s id %s" % (args.ip, args.port, args.slave))
     start_t = time.time()
     client = ModbusClient(args.ip, args.port)
     client.connect()
@@ -23,6 +24,10 @@ def main(args):
                 if row[0].startswith('#'):
                     continue
 
+                if args.comma:
+                    separator = ","
+                else:
+                    separator = "\t"
                 register = int(row[0])
                 register_length = int(row[1])
                 try:
@@ -32,7 +37,7 @@ def main(args):
                 encoding = row[3]
                 start_t = time.time()
                 result = client.read_input_registers(
-                        register, register_length, unit=1
+                        register, register_length, unit=args.slave
                 )
                 end_t = time.time()
                 try:
@@ -42,6 +47,8 @@ def main(args):
                         wordorder=Endian.Big
                     )
                 except Exception:
+                    print(separator.join((str(register),
+                                          "REGISTER NOT FOUND")))
                     continue
 
                 if encoding.upper() == 'CHAR':
@@ -62,12 +69,11 @@ def main(args):
                 else:
                     decoded = "FORMAT NOT SUPPORTED"
 
-                time_t = (end_t - start_t) * 1000
+                time_t = round((end_t - start_t) * 1000, 2)
 
-                if args.comma:
-                    print("%s,%s,%dms" % (register, decoded, time_t))
-                else:
-                    print("%s:\t%s\t%dms" % (register, decoded, time_t))
+                print(separator.join((str(register),
+                                      str(decoded),
+                                      str(time_t))))
                 time.sleep(args.delay)
 
         if not args.loop:
@@ -81,6 +87,7 @@ if __name__ == "__main__":
     parser.add_argument("ip", help="target IP address")
     parser.add_argument("csv_file", help="csv file to be parsed")
     parser.add_argument("--port", "-p", type=int, default=502, help="port")
+    parser.add_argument("--slave", "-s", type=int, default=1, help="slave id")
     parser.add_argument("--delay", "-d", type=float, default=1, help="delay")
     parser.add_argument("--loop", "-l", action="store_true", help="loop")
     parser.add_argument("--comma", "-c", action="store_true",
