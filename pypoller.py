@@ -25,9 +25,11 @@ def main(args):
                 except ValueError:
                     multiplier = 1
                 encoding = row[3]
+                start_t = time.time()
                 result = client.read_input_registers(
                         register, register_length, unit=1
                 )
+                end_t = time.time()
                 try:
                     decoder = BinaryPayloadDecoder.fromRegisters(
                         result.registers,
@@ -56,7 +58,8 @@ def main(args):
                 else:
                     decoded = "FORMAT NOT SUPPORTED"
 
-                print("%s:\t%s" % (register, decoded))
+                time_t = (end_t - start_t) * 1000
+                print("%s:\t%s\t%dms" % (register, decoded, time_t))
                 time.sleep(args.delay)
 
         if not args.loop:
