@@ -9,8 +9,13 @@ from pymodbus.constants import Endian
 
 
 def main(args):
+    start_t = time.time()
     client = ModbusClient(args.ip, args.port)
     client.connect()
+    end_t = time.time()
+    time_t = (end_t - start_t) * 1000
+    print("# connection established in %dms" % time_t)
+
     while True:
         with open(args.csv_file) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=",")
