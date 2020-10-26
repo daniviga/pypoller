@@ -37,7 +37,6 @@ def main(args):
                         wordorder=Endian.Big
                     )
                 except Exception:
-                    print("%s:\tREGISTER NOT SUPPORTED" % register)
                     continue
 
                 if encoding.upper() == 'CHAR':
@@ -59,7 +58,11 @@ def main(args):
                     decoded = "FORMAT NOT SUPPORTED"
 
                 time_t = (end_t - start_t) * 1000
-                print("%s:\t%s\t%dms" % (register, decoded, time_t))
+
+                if args.comma:
+                    print("%s,%s,%dms" % (register, decoded, time_t))
+                else:
+                    print("%s:\t%s\t%dms" % (register, decoded, time_t))
                 time.sleep(args.delay)
 
         if not args.loop:
@@ -75,5 +78,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", "-p", type=int, default=502, help="port")
     parser.add_argument("--delay", "-d", type=float, default=1, help="delay")
     parser.add_argument("--loop", "-l", action="store_true", help="loop")
+    parser.add_argument("--comma", "-c", action="store_true",
+                        help="use comma separator")
     args = parser.parse_args()
     main(args)
