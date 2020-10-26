@@ -23,3 +23,9 @@ $ pip install -U pip -r requirements.txt -r requirements-dev.txt
 ```bash
 $ ./pypoller.py 192.168.0.120 demo/registers.csv --port 502 --slave 1 --loop --delay 0.01
 ```
+
+
+## Docker
+```bash
+$ docker run --rm -ti -v $(pwd)/demo:/io daniviga/pypoller 192.168.0.120 /io/registers.csv --port 502 --slave 1 --loop --delay 0.01
+```
