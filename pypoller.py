@@ -28,11 +28,16 @@ def main(args):
                 result = client.read_input_registers(
                         register, register_length, unit=1
                 )
-                decoder = BinaryPayloadDecoder.fromRegisters(
-                    result.registers,
-                    byteorder=Endian.Big,
-                    wordorder=Endian.Big
-                )
+                try:
+                    decoder = BinaryPayloadDecoder.fromRegisters(
+                        result.registers,
+                        byteorder=Endian.Big,
+                        wordorder=Endian.Big
+                    )
+                except Exception:
+                    print("%s:\tREGISTER NOT SUPPORTED" % register)
+                    continue
+
                 if encoding.upper() == 'CHAR':
                     decoded = decoder.decode_string(
                         register_length*2).decode()
@@ -49,9 +54,9 @@ def main(args):
                 elif encoding.upper() == 'S32':
                     decoded = decoder.decode_32bit_int() * multiplier
                 else:
-                    decoded = "FORMAT UNSUPPORTED"
+                    decoded = "FORMAT NOT SUPPORTED"
 
-                print("%s:\t" % register, decoded)
+                print("%s:\t%s" % (register, decoded))
                 time.sleep(args.delay)
 
         if not args.loop:
