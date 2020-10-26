@@ -9,8 +9,13 @@ from pymodbus.constants import Endian
 
 
 def main(args):
+    start_t = time.time()
     client = ModbusClient(args.ip, args.port)
     client.connect()
+    end_t = time.time()
+    time_t = (end_t - start_t) * 1000
+    print("# connection established in %dms" % time_t)
+
     while True:
         with open(args.csv_file) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=",")
@@ -25,9 +30,11 @@ def main(args):
                 except ValueError:
                     multiplier = 1
                 encoding = row[3]
+                start_t = time.time()
                 result = client.read_input_registers(
                         register, register_length, unit=1
                 )
+                end_t = time.time()
                 try:
                     decoder = BinaryPayloadDecoder.fromRegisters(
                         result.registers,
@@ -35,7 +42,6 @@ def main(args):
                         wordorder=Endian.Big
                     )
                 except Exception:
-                    print("%s:\tREGISTER NOT SUPPORTED" % register)
                     continue
 
                 if encoding.upper() == 'CHAR':
@@ -56,7 +62,12 @@ def main(args):
                 else:
                     decoded = "FORMAT NOT SUPPORTED"
 
-                print("%s:\t%s" % (register, decoded))
+                time_t = (end_t - start_t) * 1000
+
+                if args.comma:
+                    print("%s,%s,%dms" % (register, decoded, time_t))
+                else:
+                    print("%s:\t%s\t%dms" % (register, decoded, time_t))
                 time.sleep(args.delay)
 
         if not args.loop:
@@ -72,5 +83,7 @@ if __name__ == "__main__":
     parser.add_argument("--port", "-p", type=int, default=502, help="port")
     parser.add_argument("--delay", "-d", type=float, default=1, help="delay")
     parser.add_argument("--loop", "-l", action="store_true", help="loop")
+    parser.add_argument("--comma", "-c", action="store_true",
+                        help="use comma separator")
     args = parser.parse_args()
     main(args)
