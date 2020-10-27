@@ -78,6 +78,7 @@ def main(args):
 
         if not args.loop:
             break
+        time.sleep(args.loop_wait)
 
     client.close()
 
@@ -88,8 +89,10 @@ if __name__ == "__main__":
     parser.add_argument("csv_file", help="csv file to be parsed")
     parser.add_argument("--port", "-p", type=int, default=502, help="port")
     parser.add_argument("--slave", "-s", type=int, default=1, help="slave id")
-    parser.add_argument("--delay", "-d", type=float, default=1, help="delay")
+    parser.add_argument("--delay", "-d", type=float, default=0.1, help="delay")
     parser.add_argument("--loop", "-l", action="store_true", help="loop")
+    parser.add_argument("--loop-wait", "-w", type=int, default=1,
+                        help="delay between loops")
     parser.add_argument("--comma", "-c", action="store_true",
                         help="use comma separator")
     args = parser.parse_args()
