@@ -11,12 +11,12 @@ $ source venv/bin/activate
 
 ### Dependencies installation
 ```bash
-$ pip install -U pip -r requirements.txt
+$ pip install -r requirements.txt
 ```
 
 ### Dev stuff
 ```bash
-$ pip install -U pip -r requirements.txt -r requirements-dev.txt
+$ pip install -r requirements.txt -r requirements-dev.txt
 ```
 
 ## Usage
