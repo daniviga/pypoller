@@ -30,7 +30,7 @@ def main(args):
         with open(args.csv_file) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=",")
             for row in csv_reader:
-                if row[0].startswith('#'):
+                if row[0].startswith("#"):
                     continue
 
                 function = row[0]
@@ -44,11 +44,11 @@ def main(args):
                 start_t = time.time()
                 if function == "3":
                     result = client.read_holding_registers(
-                            register, register_length, unit=args.slave
+                        register, register_length, unit=args.slave
                     )
                 elif function == "4":
                     result = client.read_input_registers(
-                            register, register_length, unit=args.slave
+                        register, register_length, unit=args.slave
                     )
                 else:
                     log_error(register, "FUNCTION %s NOT SUPPORTED" % function)
@@ -59,40 +59,45 @@ def main(args):
                     decoder = BinaryPayloadDecoder.fromRegisters(
                         result.registers,
                         byteorder=Endian.Big,
-                        wordorder=Endian.Big
+                        wordorder=Endian.Big,
                     )
                 except Exception:
                     log_error(register, "REGISTER NOT FOUND")
                     continue
 
                 try:
-                    if encoding.upper() == 'CHAR':
-                        decoded = decoder.decode_string(
-                            register_length*2).decode().rstrip()
-                    elif encoding.upper() == 'U8':
+                    if encoding.upper() == "CHAR":
+                        decoded = (
+                            decoder.decode_string(register_length * 2)
+                            .decode()
+                            .rstrip()
+                        )
+                    elif encoding.upper() == "U8":
                         decoded = decoder.decode_8bit_uint() * multiplier
-                    elif encoding.upper() == 'U16':
+                    elif encoding.upper() == "U16":
                         decoded = decoder.decode_16bit_uint() * multiplier
-                    elif encoding.upper() == 'U32':
+                    elif encoding.upper() == "U32":
                         decoded = decoder.decode_32bit_uint() * multiplier
-                    elif encoding.upper() == 'S8':
+                    elif encoding.upper() == "S8":
                         decoded = decoder.decode_8bit_int() * multiplier
-                    elif encoding.upper() == 'S16':
+                    elif encoding.upper() == "S16":
                         decoded = decoder.decode_16bit_int() * multiplier
-                    elif encoding.upper() == 'S32':
+                    elif encoding.upper() == "S32":
                         decoded = decoder.decode_32bit_int() * multiplier
                     else:
                         log_error(encoding.upper(), "FORMAT NOT SUPPORTED")
                         continue
                 except struct.error as e:
                     decoded = "DECODE FAILED (e:'%s' raw:'%s')" % (
-                        e, decoder.decode_string(register_length*2).decode())
+                        e,
+                        decoder.decode_string(register_length * 2).decode(),
+                    )
 
                 time_t = round((end_t - start_t) * 1000, 2)
 
-                print(separator.join((str(register),
-                                      str(decoded),
-                                      str(time_t))))
+                print(
+                    separator.join((str(register), str(decoded), str(time_t)))
+                )
                 time.sleep(args.delay)
 
         if args.loop == 0:
