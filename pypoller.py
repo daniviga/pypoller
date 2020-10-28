@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import csv
 import time
+import struct
 import argparse
 
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.constants import Endian
+from pymodbus.exceptions import ConnectionException
 
 
 def log_error(error, msg):
@@ -16,7 +18,10 @@ def main(args):
     print("# connecting to %s:%s id %s" % (args.ip, args.port, args.slave))
     start_t = time.time()
     client = ModbusClient(args.ip, args.port)
-    client.connect()
+    c = client.connect()
+    if not c:
+        exit("# unable to connect to %s:%s" % (args.ip, args.port))
+
     end_t = time.time()
     time_t = (end_t - start_t) * 1000
     print("# connection established in %dms" % time_t)
@@ -60,24 +65,28 @@ def main(args):
                     log_error(register, "REGISTER NOT FOUND")
                     continue
 
-                if encoding.upper() == 'CHAR':
-                    decoded = decoder.decode_string(
-                        register_length*2).decode()
-                elif encoding.upper() == 'U8':
-                    decoded = decoder.decode_8bit_uint() * multiplier
-                elif encoding.upper() == 'U16':
-                    decoded = decoder.decode_16bit_uint() * multiplier
-                elif encoding.upper() == 'U32':
-                    decoded = decoder.decode_32bit_uint() * multiplier
-                elif encoding.upper() == 'S8':
-                    decoded = decoder.decode_8bit_int() * multiplier
-                elif encoding.upper() == 'S16':
-                    decoded = decoder.decode_16bit_int() * multiplier
-                elif encoding.upper() == 'S32':
-                    decoded = decoder.decode_32bit_int() * multiplier
-                else:
-                    log_error(encoding.upper(), "FORMAT NOT SUPPORTED")
-                    continue
+                try:
+                    if encoding.upper() == 'CHAR':
+                        decoded = decoder.decode_string(
+                            register_length*2).decode().rstrip()
+                    elif encoding.upper() == 'U8':
+                        decoded = decoder.decode_8bit_uint() * multiplier
+                    elif encoding.upper() == 'U16':
+                        decoded = decoder.decode_16bit_uint() * multiplier
+                    elif encoding.upper() == 'U32':
+                        decoded = decoder.decode_32bit_uint() * multiplier
+                    elif encoding.upper() == 'S8':
+                        decoded = decoder.decode_8bit_int() * multiplier
+                    elif encoding.upper() == 'S16':
+                        decoded = decoder.decode_16bit_int() * multiplier
+                    elif encoding.upper() == 'S32':
+                        decoded = decoder.decode_32bit_int() * multiplier
+                    else:
+                        log_error(encoding.upper(), "FORMAT NOT SUPPORTED")
+                        continue
+                except struct.error as e:
+                    decoded = "DECODE FAILED (e:'%s' raw:'%s')" % (
+                        e, decoder.decode_string(register_length*2).decode())
 
                 time_t = round((end_t - start_t) * 1000, 2)
 
@@ -86,25 +95,30 @@ def main(args):
                                       str(time_t))))
                 time.sleep(args.delay)
 
-        if not args.loop:
+        if args.loop == 0:
             break
-        time.sleep(args.loop_wait)
+        time.sleep(args.loop)
 
     client.close()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("ip", help="target IP address")
-    parser.add_argument("csv_file", help="csv file to be parsed")
-    parser.add_argument("--port", "-p", type=int, default=502, help="port")
-    parser.add_argument("--slave", "-s", type=int, default=1, help="slave id")
-    parser.add_argument("--delay", "-d", type=float, default=0.1, help="delay")
-    parser.add_argument("--loop", "-l", action="store_true", help="loop")
-    parser.add_argument("--loop-wait", "-w", type=int, default=1,
-                        help="delay between loops")
+    parser.add_argument("ip",
+                        help="Target IP address")
+    parser.add_argument("csv_file",
+                        help="CSV file to be parsed")
+    parser.add_argument("--port", "-p", type=int, default=502,
+                        help="Target modbus port")
+    parser.add_argument("--slave", "-s", type=int, default=1,
+                        help="Slave ID")
+    parser.add_argument("--delay", "-d", type=float, default=0.1,
+                        help="Delay between registers polling. "
+                             "Default is 100ms")
+    parser.add_argument("--loop", "-l", type=float, default=0,
+                        help="Loop over the CSV, with a delay")
     parser.add_argument("--comma", "-c", action="store_true",
-                        help="use comma separator")
+                        help="Use comma separator")
     args = parser.parse_args()
 
     if args.comma:
