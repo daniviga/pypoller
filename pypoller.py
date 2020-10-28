@@ -7,7 +7,17 @@ import argparse
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.constants import Endian
-from pymodbus.exceptions import ConnectionException
+from pymodbus.exceptions import ModbusIOException
+
+ENCODINGS = {
+    "CHAR": "decoder.decode_string(register_length * 2)",
+    "U8": "decoder.decode_8bit_uint()",
+    "U16": "decoder.decode_16bit_uint()",
+    "U32": "decoder.decode_16bit_uint()",
+    "S8": "decoder.decode_8bit_int()",
+    "S16": "decoder.decode_16bit_int()",
+    "S32": "decoder.decode_32bit_int()",
+}
 
 
 def log_error(error, msg):
@@ -18,13 +28,14 @@ def main(args):
     print("# connecting to %s:%s id %s" % (args.ip, args.port, args.slave))
     start_t = time.time()
     client = ModbusClient(args.ip, args.port, timeout=args.timeout)
-    c = client.connect()
-    if not c:
+    conn = client.connect()
+    if not conn:
         exit("# unable to connect to %s:%s" % (args.ip, args.port))
 
     end_t = time.time()
     time_t = (end_t - start_t) * 1000
     print("# connection established in %dms" % time_t)
+    print("# delay: %ss timeout: %ss" % (args.delay, args.timeout))
 
     while True:
         with open(args.csv_file) as csv_file:
@@ -53,40 +64,35 @@ def main(args):
                 else:
                     log_error(register, "FUNCTION %s NOT SUPPORTED" % function)
                     continue
-
                 end_t = time.time()
-                try:
-                    decoder = BinaryPayloadDecoder.fromRegisters(
-                        result.registers,
-                        byteorder=Endian.Big,
-                        wordorder=Endian.Big,
-                    )
-                except Exception:
-                    log_error(register, "REGISTER NOT FOUND")
+
+                if result.isError():
+                    if isinstance(result, ModbusIOException):
+                        log_error(register, "I/O ERROR (TIMEOUT)")
+                    else:
+                       log_error(register, "REGISTER NOT FOUND")
                     continue
 
+                decoder = BinaryPayloadDecoder.fromRegisters(
+                    result.registers,
+                    byteorder=Endian.Big,
+                    wordorder=Endian.Big,
+                )
+
                 try:
-                    if encoding.upper() == "CHAR":
-                        decoded = (
-                            decoder.decode_string(register_length * 2)
-                            .decode()
-                            .rstrip()
-                        )
-                    elif encoding.upper() == "U8":
-                        decoded = decoder.decode_8bit_uint() * multiplier
-                    elif encoding.upper() == "U16":
-                        decoded = decoder.decode_16bit_uint() * multiplier
-                    elif encoding.upper() == "U32":
-                        decoded = decoder.decode_32bit_uint() * multiplier
-                    elif encoding.upper() == "S8":
-                        decoded = decoder.decode_8bit_int() * multiplier
-                    elif encoding.upper() == "S16":
-                        decoded = decoder.decode_16bit_int() * multiplier
-                    elif encoding.upper() == "S32":
-                        decoded = decoder.decode_32bit_int() * multiplier
-                    else:
-                        log_error(encoding.upper(), "FORMAT NOT SUPPORTED")
+                    encoding = encoding.upper()
+                    if encoding not in ENCODINGS:
+                        log_error(encoding, "FORMAT NOT SUPPORTED")
                         continue
+
+                    decoded = eval(ENCODINGS[encoding])
+
+                    # Apply transformations
+                    if isinstance(decoded, bytes):
+                        decoded = decoded.decode().rstrip()
+                    else:
+                        decoded = round(decoded * multiplier, 3)
+
                 except struct.error as e:
                     decoded = "DECODE FAILED (e:'%s' raw:'%s')" % (
                         e,
@@ -128,9 +134,6 @@ if __name__ == "__main__":
                         help="Use comma separator")
     args = parser.parse_args()
 
-    if args.comma:
-        separator = ","
-    else:
-        separator = "\t"
+    separator = "," if args.comma else "\t"
 
     main(args)
