@@ -9,14 +9,14 @@ $ python3 -m venv venv
 $ source venv/bin/activate
 ```
 
-### Dependencies installation
+### Installation
 ```bash
-$ pip install -r requirements.txt
+$ pip install .
 ```
 
 ### Dev stuff
 ```bash
-$ pip install -r requirements.txt -r requirements-dev.txt
+$ pip install -r requirements-dev.txt .
 ```
 
 ## Usage
@@ -39,7 +39,7 @@ optional arguments:
   --loop LOOP, -l LOOP  Loop over the CSV, with a delay
   --comma, -c           Use comma separator
 
-$ ./pypoller.py 192.168.0.120 demo/registers.csv --port 502 --slave 1 --loop 1 --delay 0.01
+$ pypoller.py 192.168.0.120 demo/registers.csv --port 502 --slave 1 --loop 1 --delay 0.01
 ```
 
 
