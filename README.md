@@ -21,7 +21,7 @@ $ pip install -U pip -r requirements.txt -r requirements-dev.txt
 
 ## Usage
 ```bash
-usage: pypoller.py [-h] [--port PORT] [--slave SLAVE] [--delay DELAY] [--loop LOOP] [--comma] ip csv_file
+usage: pypoller.py [-h] [--port PORT] [--slave SLAVE] [--timeout TIMEOUT] [--delay DELAY] [--loop LOOP] [--comma] ip csv_file
 
 positional arguments:
   ip                    Target IP address
@@ -32,8 +32,10 @@ optional arguments:
   --port PORT, -p PORT  Target modbus port
   --slave SLAVE, -s SLAVE
                         Slave ID
+  --timeout TIMEOUT, -t TIMEOUT
+                        Time a client should wait for a request to be processed (3 seconds)
   --delay DELAY, -d DELAY
-                        Delay between registers polling. Default is 100ms
+                        Delay between registers polling (100 ms)
   --loop LOOP, -l LOOP  Loop over the CSV, with a delay
   --comma, -c           Use comma separator
 

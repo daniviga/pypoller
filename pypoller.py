@@ -17,7 +17,7 @@ def log_error(error, msg):
 def main(args):
     print("# connecting to %s:%s id %s" % (args.ip, args.port, args.slave))
     start_t = time.time()
-    client = ModbusClient(args.ip, args.port)
+    client = ModbusClient(args.ip, args.port, timeout=args.timeout)
     c = client.connect()
     if not c:
         exit("# unable to connect to %s:%s" % (args.ip, args.port))
@@ -117,9 +117,11 @@ if __name__ == "__main__":
                         help="Target modbus port")
     parser.add_argument("--slave", "-s", type=int, default=1,
                         help="Slave ID")
+    parser.add_argument("--timeout", "-t", type=float, default=3,
+                        help="Time a client should wait for a request "
+                             "to be processed (3 seconds)")
     parser.add_argument("--delay", "-d", type=float, default=0.1,
-                        help="Delay between registers polling. "
-                             "Default is 100ms")
+                        help="Delay between registers polling (100 ms)")
     parser.add_argument("--loop", "-l", type=float, default=0,
                         help="Loop over the CSV, with a delay")
     parser.add_argument("--comma", "-c", action="store_true",
