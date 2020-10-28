@@ -21,11 +21,27 @@ $ pip install -U pip -r requirements.txt -r requirements-dev.txt
 
 ## Usage
 ```bash
-$ ./pypoller.py 192.168.0.120 demo/registers.csv --port 502 --slave 1 --loop --delay 0.01
+usage: pypoller.py [-h] [--port PORT] [--slave SLAVE] [--delay DELAY] [--loop LOOP] [--comma] ip csv_file
+
+positional arguments:
+  ip                    Target IP address
+  csv_file              CSV file to be parsed
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --port PORT, -p PORT  Target modbus port
+  --slave SLAVE, -s SLAVE
+                        Slave ID
+  --delay DELAY, -d DELAY
+                        Delay between registers polling. Default is 100ms
+  --loop LOOP, -l LOOP  Loop over the CSV, with a delay
+  --comma, -c           Use comma separator
+
+$ ./pypoller.py 192.168.0.120 demo/registers.csv --port 502 --slave 1 --loop 1 --delay 0.01
 ```
 
 
 ## Docker
 ```bash
-$ docker run --rm -ti -v $(pwd)/demo:/io daniviga/pypoller 192.168.0.120 /io/registers.csv --port 502 --slave 1 --loop --delay 0.01
+$ docker run --rm -ti -v $(pwd)/demo:/io daniviga/pypoller 192.168.0.120 /io/registers.csv --port 502 --slave 1 --loop 1 --delay 0.01
 ```
