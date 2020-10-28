@@ -8,6 +8,10 @@ from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.constants import Endian
 
 
+def log_error(error, msg):
+    print(separator.join((str(error), msg)))
+
+
 def main(args):
     print("# connecting to %s:%s id %s" % (args.ip, args.port, args.slave))
     start_t = time.time()
@@ -24,21 +28,27 @@ def main(args):
                 if row[0].startswith('#'):
                     continue
 
-                if args.comma:
-                    separator = ","
-                else:
-                    separator = "\t"
-                register = int(row[0])
-                register_length = int(row[1])
+                function = row[0]
+                register = int(row[1])
+                register_length = int(row[2])
                 try:
-                    multiplier = float(row[2])
+                    multiplier = float(row[3])
                 except ValueError:
                     multiplier = 1
-                encoding = row[3]
+                encoding = row[4]
                 start_t = time.time()
-                result = client.read_input_registers(
-                        register, register_length, unit=args.slave
-                )
+                if function == "3":
+                    result = client.read_holding_registers(
+                            register, register_length, unit=args.slave
+                    )
+                elif function == "4":
+                    result = client.read_input_registers(
+                            register, register_length, unit=args.slave
+                    )
+                else:
+                    log_error(register, "FUNCTION %s NOT SUPPORTED" % function)
+                    continue
+
                 end_t = time.time()
                 try:
                     decoder = BinaryPayloadDecoder.fromRegisters(
@@ -47,8 +57,7 @@ def main(args):
                         wordorder=Endian.Big
                     )
                 except Exception:
-                    print(separator.join((str(register),
-                                          "REGISTER NOT FOUND")))
+                    log_error(register, "REGISTER NOT FOUND")
                     continue
 
                 if encoding.upper() == 'CHAR':
@@ -67,7 +76,8 @@ def main(args):
                 elif encoding.upper() == 'S32':
                     decoded = decoder.decode_32bit_int() * multiplier
                 else:
-                    decoded = "FORMAT NOT SUPPORTED"
+                    log_error(encoding.upper(), "FORMAT NOT SUPPORTED")
+                    continue
 
                 time_t = round((end_t - start_t) * 1000, 2)
 
@@ -96,4 +106,10 @@ if __name__ == "__main__":
     parser.add_argument("--comma", "-c", action="store_true",
                         help="use comma separator")
     args = parser.parse_args()
+
+    if args.comma:
+        separator = ","
+    else:
+        separator = "\t"
+
     main(args)
