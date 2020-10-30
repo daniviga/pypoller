@@ -4,6 +4,7 @@ import time
 import struct
 import argparse
 
+from datetime import datetime
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.constants import Endian
@@ -102,7 +103,12 @@ def main(args):
                 time_t = round((end_t - start_t) * 1000, 2)
 
                 print(
-                    separator.join((str(register), str(decoded), str(time_t)))
+                    separator.join(
+                        (str(datetime.now()),
+                         str(register),
+                         str(decoded),
+                         str(time_t))
+                    )
                 )
                 time.sleep(args.delay)
 
