@@ -11,12 +11,14 @@ $ source venv/bin/activate
 
 ### Installation
 ```bash
-$ pip install .
+$ pip install https://github.com/daniviga/pypoller/archive/master.zip
 ```
 
-### Dev stuff
+### Development installation
 ```bash
-$ pip install -r requirements-dev.txt .
+$ git clone https://github.com/daniviga/pypoller.git
+$ cd pypoller
+$ pip install -r requirements-dev.txt -e .
 ```
 
 ## Usage
