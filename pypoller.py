@@ -2,6 +2,7 @@
 import csv
 import time
 import struct
+import atexit
 import argparse
 
 from datetime import datetime
@@ -21,11 +22,19 @@ ENCODINGS = {
 }
 
 
+def teardown():
+    if client is not None:
+        print("# closing connection to %s:%s" % (client.host, client.port))
+        client.close()
+
+
 def log_error(error, msg):
     print(separator.join((str(error), msg)))
 
 
 def main(args):
+    global client
+
     print("# connecting to %s:%s id %s" % (args.ip, args.port, args.slave))
     start_t = time.time()
     client = ModbusClient(args.ip, args.port, timeout=args.timeout)
@@ -71,7 +80,7 @@ def main(args):
                     if isinstance(result, ModbusIOException):
                         log_error(register, "I/O ERROR (TIMEOUT)")
                     else:
-                       log_error(register, "REGISTER NOT FOUND")
+                        log_error(register, "REGISTER NOT FOUND")
                     continue
 
                 decoder = BinaryPayloadDecoder.fromRegisters(
@@ -116,8 +125,6 @@ def main(args):
             break
         time.sleep(args.loop)
 
-    client.close()
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -142,4 +149,5 @@ if __name__ == "__main__":
 
     separator = "," if args.comma else "\t"
 
+    atexit.register(teardown)
     main(args)
