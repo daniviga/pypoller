@@ -24,12 +24,12 @@ ENCODINGS = {
 
 def teardown():
     if client is not None:
-        print("# closing connection to %s:%s" % (client.host, client.port))
+        print("# closing connection to %s:%s" % (client.host, client.port), flush=True)
         client.close()
 
 
 def log_error(error, msg):
-    print(separator.join((str(error), msg)))
+    print(separator.join((str(error), msg)), flush=True)
 
 
 def main(args):
@@ -117,7 +117,7 @@ def main(args):
                          str(register),
                          str(decoded),
                          str(time_t))
-                    )
+                    ), flush=True
                 )
                 time.sleep(args.delay)
 
