@@ -24,7 +24,10 @@ ENCODINGS = {
 
 def teardown():
     if client is not None:
-        print("# closing connection to %s:%s" % (client.host, client.port), flush=True)
+        print(
+            "# closing connection to %s:%s" % (client.host, client.port),
+            flush=True,
+        )
         client.close()
 
 
@@ -131,7 +134,7 @@ if __name__ == "__main__":
     parser.add_argument("ip",
                         help="Target IP address")
     parser.add_argument("csv_file",
-                        help="CSV file to be parsed")
+                        help="Modbus map CSV file to be parsed")
     parser.add_argument("--port", "-p", type=int, default=502,
                         help="Target modbus port")
     parser.add_argument("--slave", "-s", type=int, default=1,
@@ -142,9 +145,9 @@ if __name__ == "__main__":
     parser.add_argument("--delay", "-d", type=float, default=0.1,
                         help="Delay between registers polling (100 ms)")
     parser.add_argument("--loop", "-l", type=float, default=0,
-                        help="Loop over the CSV, with a delay")
+                        help="Loop over the CSV, with an optional delay")
     parser.add_argument("--comma", "-c", action="store_true",
-                        help="Use comma separator")
+                        help="Use comma separator in output")
     args = parser.parse_args()
 
     separator = "," if args.comma else "\t"
