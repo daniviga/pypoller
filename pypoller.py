@@ -137,7 +137,7 @@ def main(args):
                 )
                 time.sleep(args.delay)
 
-        if args.loop == 0:
+        if args.loop == -1:
             break
         time.sleep(args.loop)
 
@@ -157,7 +157,8 @@ if __name__ == "__main__":
                              "to be processed (3 seconds)")
     parser.add_argument("--delay", "-d", type=float, default=0.1,
                         help="Delay between registers polling (100 ms)")
-    parser.add_argument("--loop", "-l", type=float, default=0,
+    parser.add_argument("--loop", "-l", type=float, default=-1, const=0,
+                        nargs="?",
                         help="Loop over the CSV, with an optional delay")
     parser.add_argument("--comma", "-c", action="store_true",
                         help="Use comma separator in output")
