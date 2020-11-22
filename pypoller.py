@@ -118,7 +118,11 @@ def main(args):
 
                 time_t = round((end_t - start_t) * 1000, 2)
 
-                average = round((smoothing_factor * time_t) + (1 - smoothing_factor) * average, 2)
+                average = round(
+                    (smoothing_factor * time_t)
+                    + (1 - smoothing_factor) * average,
+                    2,
+                )
 
                 print(
                     separator.join(
