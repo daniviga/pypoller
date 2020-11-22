@@ -49,6 +49,10 @@ def main(args):
     time_t = (end_t - start_t) * 1000
     print("# connection established in %dms" % time_t)
     print("# delay: %ss timeout: %ss" % (args.delay, args.timeout))
+    print("# smoothing factor %f" % args.factor)
+    smoothing_factor = args.factor
+    average = 100
+    errors = 0
 
     while True:
         with open(args.csv_file) as csv_file:
@@ -114,12 +118,17 @@ def main(args):
 
                 time_t = round((end_t - start_t) * 1000, 2)
 
+                average = round((smoothing_factor * time_t) + (1 - smoothing_factor) * average, 2)
+
                 print(
                     separator.join(
                         (str(datetime.now()),
+                         str(args.ip),
                          str(register),
                          str(decoded),
-                         str(time_t))
+                         str(time_t),
+                         str(average),
+                         str(errors))
                     ), flush=True
                 )
                 time.sleep(args.delay)
@@ -148,6 +157,8 @@ if __name__ == "__main__":
                         help="Loop over the CSV, with an optional delay")
     parser.add_argument("--comma", "-c", action="store_true",
                         help="Use comma separator in output")
+    parser.add_argument("--factor", "-f", type=float, default=0.05,
+                        help="Exponential smoothing factor from 0 to 1 (0.05)")
     args = parser.parse_args()
 
     separator = "," if args.comma else "\t"
