@@ -23,6 +23,8 @@ $ pip install https://github.com/daniviga/pypoller/archive/master.zip
 $ pip install https://github.com/daniviga/pypoller/releases/download/X.Y.Z/pypoller-X.Y.Z-py3-none-any.whl
 ```
 
+Releases are available at https://github.com/daniviga/pypoller/releases
+
 ### Development installation
 ```bash
 $ git clone https://github.com/daniviga/pypoller.git
