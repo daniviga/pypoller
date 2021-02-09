@@ -15,10 +15,12 @@ ENCODINGS = {
     "CHAR": "decoder.decode_string(register_length * 2)",
     "U8": "decoder.decode_8bit_uint()",
     "U16": "decoder.decode_16bit_uint()",
-    "U32": "decoder.decode_16bit_uint()",
+    "U32": "decoder.decode_32bit_uint()",
+    "U64": "decoder.decode_64bit_uint()",
     "S8": "decoder.decode_8bit_int()",
     "S16": "decoder.decode_16bit_int()",
     "S32": "decoder.decode_32bit_int()",
+    "S64": "decoder.decode_64bit_int()",
 }
 
 
