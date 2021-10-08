@@ -24,11 +24,13 @@ ENCODINGS = {
 }
 
 
-def teardown():
+def teardown(client, average, errors):
     if client is not None:
         print(
-            "# closing connection to %s:%s" % (client.host, client.port),
-            flush=True,
+            "# closing connection to %s:%s\n"
+            "# average: %s, errors: %s"
+            % (client.host, client.port, average, errors),
+            flush=True
         )
         client.close()
 
@@ -38,7 +40,8 @@ def log_error(error, msg):
 
 
 def main(args):
-    global client
+    average = 100
+    errors = 0
 
     print("# connecting to %s:%s id %s" % (args.ip, args.port, args.slave))
     start_t = time.time()
@@ -47,14 +50,26 @@ def main(args):
     if not conn:
         exit("# unable to connect to %s:%s" % (args.ip, args.port))
 
+    atexit.register(teardown, client, average, errors)
+
     end_t = time.time()
     time_t = (end_t - start_t) * 1000
     print("# connection established in %dms" % time_t)
     print("# delay: %ss timeout: %ss" % (args.delay, args.timeout))
     print("# smoothing factor %f" % args.factor)
     smoothing_factor = args.factor
-    average = 100
-    errors = 0
+
+    print(
+        separator.join(
+            ("Timestamp",
+             "IP",
+             "Register#",
+             "value",
+             "Time (ms)",
+             "Average (ms)",
+             "Errors#")
+        ), flush=True
+    )
 
     while True:
         with open(args.csv_file) as csv_file:
@@ -170,5 +185,4 @@ if __name__ == "__main__":
 
     separator = "," if args.comma else "\t"
 
-    atexit.register(teardown)
     main(args)
