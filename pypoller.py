@@ -50,7 +50,7 @@ def connect(client, args):
 
 
 def log_error(error, msg):
-    print(separator.join((str(error), msg)), flush=True)
+    print(separator.join(("#! %s" % error, msg)), flush=True)
 
 
 def main(args):
