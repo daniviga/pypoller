@@ -24,7 +24,7 @@ ENCODINGS = {
 }
 
 
-def teardown(client, average, errors):
+def teardown():
     if client is not None:
         print(
             "# closing connection to %s:%s\n"
@@ -35,26 +35,36 @@ def teardown(client, average, errors):
         client.close()
 
 
+def connect(client, args):
+    print("# connecting to %s:%s id %s" % (args.ip, args.port, args.slave))
+    start_t = time.time()
+    conn = client.connect()
+    if not conn:
+        exit("# unable to connect to %s:%s" % (args.ip, args.port))
+
+    end_t = time.time()
+    time_t = (end_t - start_t) * 1000
+    print("# connection established in %dms" % time_t)
+
+    return client
+
+
 def log_error(error, msg):
     print(separator.join((str(error), msg)), flush=True)
 
 
 def main(args):
+    global average
+    global errors
+    global client
+
     average = 100
     errors = 0
+    client = connect(
+        ModbusClient(args.ip, args.port, timeout=args.timeout),
+        args)
+    atexit.register(teardown)
 
-    print("# connecting to %s:%s id %s" % (args.ip, args.port, args.slave))
-    start_t = time.time()
-    client = ModbusClient(args.ip, args.port, timeout=args.timeout)
-    conn = client.connect()
-    if not conn:
-        exit("# unable to connect to %s:%s" % (args.ip, args.port))
-
-    atexit.register(teardown, client, average, errors)
-
-    end_t = time.time()
-    time_t = (end_t - start_t) * 1000
-    print("# connection established in %dms" % time_t)
     print("# delay: %ss timeout: %ss" % (args.delay, args.timeout))
     print("# smoothing factor %f" % args.factor)
     smoothing_factor = args.factor
@@ -72,6 +82,12 @@ def main(args):
     )
 
     while True:
+        if not client.is_socket_open():
+            print("# socket closed, reconnecting ...")
+            client = connect(
+                ModbusClient(args.ip, args.port, timeout=args.timeout),
+                args)
+
         with open(args.csv_file) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=",")
             for row in csv_reader:
@@ -101,6 +117,7 @@ def main(args):
                 end_t = time.time()
 
                 if result.isError():
+                    errors += 1
                     if isinstance(result, ModbusIOException):
                         log_error(register, "I/O ERROR (TIMEOUT)")
                     else:
