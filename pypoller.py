@@ -132,6 +132,12 @@ def main(args):
 
                 try:
                     encoding = encoding.upper()
+                    # Add support for encoding guessing
+                    if encoding in ("U", "S"):
+                        encoding = "%s%s" % (
+                            encoding,
+                            register_length * 16)
+
                     if encoding not in ENCODINGS:
                         log_error(encoding, "FORMAT NOT SUPPORTED")
                         continue
