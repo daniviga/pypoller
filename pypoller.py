@@ -13,11 +13,9 @@ from pymodbus.exceptions import ModbusIOException
 
 ENCODINGS = {
     "CHAR": "decoder.decode_string(register_length * 2)",
-    "U8": "decoder.decode_8bit_uint()",
     "U16": "decoder.decode_16bit_uint()",
     "U32": "decoder.decode_32bit_uint()",
     "U64": "decoder.decode_64bit_uint()",
-    "S8": "decoder.decode_8bit_int()",
     "S16": "decoder.decode_16bit_int()",
     "S32": "decoder.decode_32bit_int()",
     "S64": "decoder.decode_64bit_int()",
@@ -50,7 +48,7 @@ def connect(client, args):
 
 
 def log_error(error, msg):
-    print(separator.join((str(error), msg)), flush=True)
+    print(separator.join(("#! %s" % error, msg)), flush=True)
 
 
 def main(args):
@@ -132,6 +130,12 @@ def main(args):
 
                 try:
                     encoding = encoding.upper()
+                    # Add support for encoding guessing
+                    if encoding in ("U", "S"):
+                        encoding = "%s%s" % (
+                            encoding,
+                            register_length * 16)
+
                     if encoding not in ENCODINGS:
                         log_error(encoding, "FORMAT NOT SUPPORTED")
                         continue
