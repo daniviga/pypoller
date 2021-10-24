@@ -9,8 +9,11 @@ from datetime import datetime
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.constants import Endian
-from pymodbus.exceptions import (ModbusException, ModbusIOException,
-                                 ConnectionException)
+from pymodbus.exceptions import (
+    ModbusException,
+    ModbusIOException,
+    ConnectionException,
+)
 
 ENCODINGS = {
     "CHAR": "decoder.decode_string(register_length * 2)",
@@ -36,7 +39,7 @@ def teardown():
             "# closing connection to %s:%s\n"
             "# average: %s, errors: %s"
             % (client.host, client.port, average, errors),
-            flush=True
+            flush=True,
         )
         client.close()
 
@@ -77,9 +80,7 @@ def main(args):
     global errors
     global client
 
-    client = init(
-        ModbusClient(args.ip, args.port, timeout=args.timeout),
-        args)
+    client = init(ModbusClient(args.ip, args.port, timeout=args.timeout), args)
     atexit.register(teardown)
 
     print("# delay: %ss timeout: %ss" % (args.delay, args.timeout))
@@ -88,14 +89,17 @@ def main(args):
 
     print(
         separator.join(
-            ("Timestamp",
-             "IP",
-             "Register",
-             "Value",
-             "Time (ms)",
-             "Average (ms)",
-             "Errors")
-        ), flush=True
+            (
+                "Timestamp",
+                "IP",
+                "Register",
+                "Value",
+                "Time (ms)",
+                "Average (ms)",
+                "Errors",
+            )
+        ),
+        flush=True,
     )
 
     while True:
@@ -131,8 +135,10 @@ def main(args):
                             register, register_length, unit=args.slave
                         )
                     else:
-                        log((register, "FUNCTION %s NOT SUPPORTED" % function),
-                            ERR)
+                        log(
+                            (register, "FUNCTION %s NOT SUPPORTED" % function),
+                            ERR,
+                        )
                         continue
                 except ConnectionException as e:
                     hard_errors += 1
@@ -165,9 +171,7 @@ def main(args):
                     encoding = encoding.upper()
                     # Add support for encoding guessing
                     if encoding in ("U", "S"):
-                        encoding = "%s%s" % (
-                            encoding,
-                            register_length * 16)
+                        encoding = "%s%s" % (encoding, register_length * 16)
 
                     if encoding not in ENCODINGS:
                         log(("FORMAT NOT SUPPORTED", encoding), ERR)
@@ -195,11 +199,7 @@ def main(args):
                     2,
                 )
 
-                log((register,
-                     decoded,
-                     time_t,
-                     average,
-                     errors), LOG)
+                log((register, decoded, time_t, average, errors), LOG)
                 time.sleep(args.delay)
 
         if args.loop == -1:
