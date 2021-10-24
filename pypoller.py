@@ -174,7 +174,8 @@ def main(args):
                         encoding = "%s%s" % (encoding, register_length * 16)
 
                     if encoding not in ENCODINGS:
-                        log(("FORMAT NOT SUPPORTED", encoding), ERR)
+                        log((register, "FORMAT %s NOT SUPPORTED" % encoding),
+                            ERR)
                         continue
 
                     decoded = eval(ENCODINGS[encoding])
