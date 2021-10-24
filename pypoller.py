@@ -136,7 +136,7 @@ def main(args):
                         continue
                 except ConnectionException as e:
                     hard_errors += 1
-                    log(str(e))
+                    log(str(e), ERR)
 
                     # limit hard failures to 5, then exit
                     if hard_errors < 5:
