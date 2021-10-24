@@ -9,7 +9,8 @@ from datetime import datetime
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.constants import Endian
-from pymodbus.exceptions import ModbusIOException
+from pymodbus.exceptions import (ModbusException, ModbusIOException,
+                                 ConnectionException)
 
 ENCODINGS = {
     "CHAR": "decoder.decode_string(register_length * 2)",
@@ -20,6 +21,13 @@ ENCODINGS = {
     "S32": "decoder.decode_32bit_int()",
     "S64": "decoder.decode_64bit_int()",
 }
+
+LOG = 0
+ERR = 1
+
+average = 100
+errors = 0
+client = None
 
 
 def teardown():
@@ -33,7 +41,7 @@ def teardown():
         client.close()
 
 
-def connect(client, args):
+def init(client, args):
     print("# connecting to %s:%s id %s" % (args.ip, args.port, args.slave))
     start_t = time.time()
     conn = client.connect()
@@ -47,8 +55,21 @@ def connect(client, args):
     return client
 
 
-def log_error(error, msg):
-    print(separator.join(("#! %s" % error, msg)), flush=True)
+# 0 standard
+# 1 error
+def log(msg, severity=0):
+    global errors
+
+    if severity == 0:
+        prefix = "%s" % datetime.now()
+    else:
+        errors += 1
+        prefix = "#! %s" % datetime.now()
+
+    if isinstance(msg, tuple):
+        msg = separator.join(str(s) for s in msg)
+
+    print(separator.join((prefix, client.host, msg)), flush=True)
 
 
 def main(args):
@@ -56,9 +77,7 @@ def main(args):
     global errors
     global client
 
-    average = 100
-    errors = 0
-    client = connect(
+    client = init(
         ModbusClient(args.ip, args.port, timeout=args.timeout),
         args)
     atexit.register(teardown)
@@ -71,21 +90,16 @@ def main(args):
         separator.join(
             ("Timestamp",
              "IP",
-             "Register#",
-             "value",
+             "Register",
+             "Value",
              "Time (ms)",
              "Average (ms)",
-             "Errors#")
+             "Errors")
         ), flush=True
     )
 
     while True:
-        if not client.is_socket_open():
-            print("# socket closed, reconnecting ...")
-            client = connect(
-                ModbusClient(args.ip, args.port, timeout=args.timeout),
-                args)
-
+        hard_errors = 0
         with open(args.csv_file) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=",")
             for row in csv_reader:
@@ -100,26 +114,45 @@ def main(args):
                 except ValueError:
                     multiplier = 1
                 encoding = row[4]
+
+                # check if socket is still alive, otherwise re-open it
+                if not client.is_socket_open():
+                    client.connect()
+
                 start_t = time.time()
-                if function == "3":
-                    result = client.read_holding_registers(
-                        register, register_length, unit=args.slave
-                    )
-                elif function == "4":
-                    result = client.read_input_registers(
-                        register, register_length, unit=args.slave
-                    )
-                else:
-                    log_error(register, "FUNCTION %s NOT SUPPORTED" % function)
-                    continue
+
+                try:
+                    if function == "3":
+                        result = client.read_holding_registers(
+                            register, register_length, unit=args.slave
+                        )
+                    elif function == "4":
+                        result = client.read_input_registers(
+                            register, register_length, unit=args.slave
+                        )
+                    else:
+                        log((register, "FUNCTION %s NOT SUPPORTED" % function),
+                            ERR)
+                        continue
+                except ConnectionException as e:
+                    hard_errors += 1
+                    log(str(e))
+
+                    # limit hard failures to 5, then exit
+                    if hard_errors < 5:
+                        continue
+                    else:
+                        exit("too many connection attempts")
+
                 end_t = time.time()
 
                 if result.isError():
-                    errors += 1
                     if isinstance(result, ModbusIOException):
-                        log_error(register, "I/O ERROR (TIMEOUT)")
+                        log((register, "I/O ERROR (TIMEOUT)"), ERR)
+                    elif isinstance(result, ModbusException):
+                        log((register, "REGISTER NOT FOUND"), ERR)
                     else:
-                        log_error(register, "REGISTER NOT FOUND")
+                        log((register, "GENERIC MODBUS ERROR"), ERR)
                     continue
 
                 decoder = BinaryPayloadDecoder.fromRegisters(
@@ -137,7 +170,7 @@ def main(args):
                             register_length * 16)
 
                     if encoding not in ENCODINGS:
-                        log_error(encoding, "FORMAT NOT SUPPORTED")
+                        log(("FORMAT NOT SUPPORTED", encoding), ERR)
                         continue
 
                     decoded = eval(ENCODINGS[encoding])
@@ -162,17 +195,11 @@ def main(args):
                     2,
                 )
 
-                print(
-                    separator.join(
-                        (str(datetime.now()),
-                         str(args.ip),
-                         str(register),
-                         str(decoded),
-                         str(time_t),
-                         str(average),
-                         str(errors))
-                    ), flush=True
-                )
+                log((register,
+                     decoded,
+                     time_t,
+                     average,
+                     errors), LOG)
                 time.sleep(args.delay)
 
         if args.loop == -1:
